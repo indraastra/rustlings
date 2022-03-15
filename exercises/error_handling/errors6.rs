@@ -1,3 +1,4 @@
+#![feature(assert_matches)]
 // errors6.rs
 
 // Using catch-all error types like `Box<dyn error::Error>` isn't recommended
@@ -8,32 +9,29 @@
 
 // Make these tests pass! Execute `rustlings hint errors6` for hints :)
 
-// I AM NOT DONE
-
 use std::num::ParseIntError;
 
 // This is a custom error type that we will be using in `parse_pos_nonzero()`.
 #[derive(PartialEq, Debug)]
 enum ParsePosNonzeroError {
     Creation(CreationError),
-    ParseInt(ParseIntError)
+    ParseInt(ParseIntError),
 }
 
 impl ParsePosNonzeroError {
     fn from_creation(err: CreationError) -> ParsePosNonzeroError {
         ParsePosNonzeroError::Creation(err)
     }
-    // TODO: add another error conversion function here.
+    fn from_parse_int(err: ParseIntError) -> ParsePosNonzeroError {
+        ParsePosNonzeroError::ParseInt(err)
+    }
 }
 
-fn parse_pos_nonzero(s: &str)
-    -> Result<PositiveNonzeroInteger, ParsePosNonzeroError>
-{
+fn parse_pos_nonzero(s: &str) -> Result<PositiveNonzeroInteger, ParsePosNonzeroError> {
     // TODO: change this to return an appropriate error instead of panicking
     // when `parse()` returns an error.
-    let x: i64 = s.parse().unwrap();
-    PositiveNonzeroInteger::new(x)
-        .map_err(ParsePosNonzeroError::from_creation)
+    let x: i64 = s.parse().map_err(ParsePosNonzeroError::from_parse_int)?;
+    PositiveNonzeroInteger::new(x).map_err(ParsePosNonzeroError::from_creation)
 }
 
 // Don't change anything below this line.
@@ -52,7 +50,7 @@ impl PositiveNonzeroInteger {
         match value {
             x if x < 0 => Err(CreationError::Negative),
             x if x == 0 => Err(CreationError::Zero),
-            x => Ok(PositiveNonzeroInteger(x as u64))
+            x => Ok(PositiveNonzeroInteger(x as u64)),
         }
     }
 }
@@ -60,14 +58,15 @@ impl PositiveNonzeroInteger {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::assert_matches::assert_matches;
 
     #[test]
     fn test_parse_error() {
         // We can't construct a ParseIntError, so we have to pattern match.
-        assert!(matches!(
+        assert_matches!(
             parse_pos_nonzero("not a number"),
             Err(ParsePosNonzeroError::ParseInt(_))
-        ));
+        );
     }
 
     #[test]
